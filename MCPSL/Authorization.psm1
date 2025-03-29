@@ -41,7 +41,7 @@ function XSTSAuth {
     param (
         [string]$XboxLiveToken
     )
-    Write-Output $(curl -X POST --json '{"Properties":{"SandboxId":"RETAIL","UserTokens":["$XboxLiveToken"]},"RelyingParty":"rp://api.minecraftservices.com/","TokenType":"JWT"}' "https://xsts.auth.xboxlive.com/xsts/authorize" | ConvertFrom-Json)
+    Write-Output $(curl -X POST --json "{""Properties"":{""SandboxId"":""RETAIL"",""UserTokens"":[""$XboxLiveToken""]},""RelyingParty"":""rp://api.minecraftservices.com/"",""TokenType"":""JWT""}" "https://xsts.auth.xboxlive.com/xsts/authorize" | ConvertFrom-Json)
 }
 
 function LoginWithXbox {
@@ -49,7 +49,7 @@ function LoginWithXbox {
         [string]$UHs,
         [string]$XSTSToken
     )
-    Write-Output $(curl -X POST --json '{"identityToken":"XBL3.0 x=$UHs;$XSTSToken"}' "https://api.minecraftservices.com/authentication/login_with_xbox" | ConvertFrom-Json)
+    Write-Output $(curl -X POST --json "{""identityToken"":""XBL3.0 x=$UHs;$XSTSToken""}" "https://api.minecraftservices.com/authentication/login_with_xbox" | ConvertFrom-Json)
 }
 
 function MCStore {
