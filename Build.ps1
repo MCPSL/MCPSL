@@ -1,0 +1,1 @@
+Get-Content -Path ./MCPSL/*.ps1 | Set-Content -Path ./MCPSL.psm1
