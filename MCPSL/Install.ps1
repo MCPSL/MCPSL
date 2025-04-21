@@ -1,5 +1,5 @@
 function GetMCVersionManifest {
-    Invoke-WebRequest 'https://piston-meta.mojang.com/mc/game/version_manifest_v2.json' | ConvertFrom-Json
+    return Invoke-WebRequest 'https://piston-meta.mojang.com/mc/game/version_manifest_v2.json' | ConvertFrom-Json
 }
 
 function Install {
@@ -28,7 +28,7 @@ function Install {
 }
 
 function GetJavaManifest {
-    Invoke-WebRequest 'https://launchermeta.mojang.com/v1/products/java-runtime/2ec0cc96c44e5a76b9c8b7c39df7210883d12871/all.json' | ConvertFrom-Json
+    return Invoke-WebRequest 'https://launchermeta.mojang.com/v1/products/java-runtime/2ec0cc96c44e5a76b9c8b7c39df7210883d12871/all.json' | ConvertFrom-Json
 }
 function InstallJava {
     param (
