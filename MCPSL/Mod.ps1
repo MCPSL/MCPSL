@@ -269,7 +269,10 @@ function CurseForgeGetMods {
         [int]$ModIds,
         [bool]$FilterPcOnly
     )
-    Invoke-WebRequest 'https://api.curseforge.com/v1/mods' -Headers @{'x-api-key' = $ApiKey} -Method 'POST' -Body $Body | ConvertFrom-Json
+    Invoke-WebRequest 'https://api.curseforge.com/v1/mods' -Headers @{'x-api-key' = $ApiKey} -Method 'POST' -Body @{
+        modIds = $ModIds
+        filterPcOnly = $FilterPcOnly
+    } | ConvertFrom-Json
 }
 
 function CurseForgeGetFeaturedMods {
@@ -279,7 +282,11 @@ function CurseForgeGetFeaturedMods {
         [int]$ExcludedModIds,
         [int]$GameVersionTypeId
     )
-    
+    Invoke-WebRequest 'https://api.curseforge.com/v1/mods/featured' -Headers @{'x-api-key' = $ApiKey} -Method 'GET' -Body @{
+        gameId = $GameId
+        excludedModIds = $ExcludedModIds
+        gameVersionTypeId = $GameVersionTypeId
+    } | ConvertFrom-Json
 }
 
 function CurseForgeGetModDescription {
