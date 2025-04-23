@@ -51,7 +51,6 @@ function ModrinthCreateFacets {
         [string]$ServerSide,
         [string]$OpenSource 
     )
-    [string]$Facets
     if ($ProjectType) {
         $Facets += "[project_type:$ProjectType],"
     }
@@ -211,5 +210,89 @@ function ModrinthGetLatestVersionsFromHashes {
         algorithm = $Algorithm
         loaders = $Loaders
         game_versions = $GameVersions
+    } | ConvertFrom-Json
+}
+
+function CurseForgeSearchMods {
+    param (
+        [string]$ApiKey,
+        [int]$GameId = 432,
+        [int]$ClassId,
+        [int]$CategoryId,
+        [string]$CategoryIds,
+        [string]$GameVersion,
+        [string]$GameVersions,
+        [string]$SearchFilter,
+        [string]$SortField,
+        [string]$SortOrder,
+        [string]$ModLoaderType,
+        [string]$ModLoaderTypes,
+        [int]$GameVersionTypeId,
+        [int]$AuthorId,
+        [int]$PrimaryAuthorId,
+        [string]$Slug,
+        [int]$Index,
+        [int]$pageSize = 50
+    )
+    Invoke-WebRequest "https://api.curseforge.com/v1/mods/search" -Headers @{'x-api-key' = $ApiKey} -Method 'GET' -Body @{
+        gameId = $GameId
+        classId = $ClassId
+        categoryId = $CategoryId
+        categoryIds = $CategoryIds
+        gameVersion = $GameVersion
+        gameVersions = $GameVersions
+        searchFilter = $SearchFilter
+        sortField = $SortField
+        sortOrder = $SortOrder
+        modLoaderType = $ModLoaderType
+        modLoaderTypes = $ModLoaderTypes
+        gameVersionTypeId = $GameVersionTypeId
+        authorId = $AuthorId
+        primaryAuthorId = $PrimaryAuthorId
+        slug = $Slug
+        index = $Index
+        pageSize = $pageSize
+    } | ConvertFrom-Json
+}
+
+function CurseForgeGetMod {
+    param (
+        [string]$ApiKey,
+        [int]$ModId
+    )
+    Invoke-WebRequest "https://api.curseforge.com/v1/mods/$ModId" -Headers @{'x-api-key' = $ApiKey} -Method 'GET' | ConvertFrom-Json
+}
+
+function CurseForgeGetMods {
+    param (
+        [string]$ApiKey,
+        [int]$ModIds,
+        [bool]$FilterPcOnly
+    )
+    Invoke-WebRequest 'https://api.curseforge.com/v1/mods' -Headers @{'x-api-key' = $ApiKey} -Method 'POST' -Body $Body | ConvertFrom-Json
+}
+
+function CurseForgeGetFeaturedMods {
+    param (
+        [string]$ApiKey,
+        [int]$GameId = 432,
+        [int]$ExcludedModIds,
+        [int]$GameVersionTypeId
+    )
+    
+}
+
+function CurseForgeGetModDescription {
+    param (
+        [string]$ApiKey,
+        [int]$ModId,
+        [bool]$Raw,
+        [bool]$Stripped,
+        [bool]$Markup
+    )
+    Invoke-WebRequest "https://api.curseforge.com/v1/mods/$ModId/description" -Headers @{'x-api-key' = $ApiKey} -Method 'GET' -Body @{
+        raw = $Raw
+        stripped = $Stripped
+        markup = $Markup
     } | ConvertFrom-Json
 }
