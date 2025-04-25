@@ -1,3 +1,16 @@
+function Get-StringHash {
+    param (
+        [string]$String,
+        [string]$Algorithm = 'SHA1'
+    )
+    $stringAsStream = [System.IO.MemoryStream]::new()
+    $writer = [System.IO.StreamWriter]::new($stringAsStream)
+    $writer.Write($String)
+    $writer.Flush()
+    $stringAsStream.Position = 0
+    return (Get-FileHash -Algorithm $Algorithm -InputStream $stringAsStream).Hash
+}
+
 function GetMCVersionManifest {
     return Invoke-WebRequest 'https://piston-meta.mojang.com/mc/game/version_manifest_v2.json' | ConvertFrom-Json
 }
@@ -30,10 +43,32 @@ function Install {
 function GetJavaManifest {
     return Invoke-WebRequest 'https://launchermeta.mojang.com/v1/products/java-runtime/2ec0cc96c44e5a76b9c8b7c39df7210883d12871/all.json' | ConvertFrom-Json
 }
+
 function InstallJava {
     param (
         [string]$OS,
-        [string]$Component
+        [string]$Component,
+        [string]$Path = "$env:LOCALAPPDATA/Packages/Microsoft.4297127D64EC6_8wekyb3d8bbwe/LocalCache/Local/runtime"
     )
-    (GetJavaManifest).$OS.$Component
+    $ManifestDownload = (GetJavaManifest).$OS.$Component.manifest
+    $Manifest = (Invoke-WebRequest $ManifestDownload.url).Content
+    if ((Get-StringHash $Manifest) -eq $ManifestDownload.sha1 -and $Manifest.Length -eq $ManifestDownload.size) {
+        $Manifest = $Manifest | ConvertFrom-Json
+        $Manifest.files.Where{ $_.type -eq 'directory' }
+        $Jobs = @()
+        foreach ($Name in ($Manifest.files | Get-Member -MemberType 'NoteProperty').Name) {
+            switch ($Manifest.files.$Name.type) {
+                'directory' {
+                    New-Item "$Path/$Component/$OS/$Component/$Name" -Type 'Directory' -Force | Out-Null
+                }
+                'file' {
+                    $Jobs += Start-ThreadJob -Name $Name -ScriptBlock {
+                        Invoke-WebRequest ($Using:Manifest).files.$Using:Name.downloads.raw.url -OutFile "$Using:Path/$Using:Component/$Using:OS/$Using:Component/$Using:Name"
+                    }
+                }
+                default {}
+            }
+        }
+        Wait-Job $Jobs
+    }
 }
