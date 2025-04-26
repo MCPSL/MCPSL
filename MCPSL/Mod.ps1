@@ -2,15 +2,19 @@ function GetForgeVersionList {
     param (
         [string]$GameVersion = '*'
     )
+    $GameVersion = $GameVersion -replace '-', '_'
     return ([xml](Invoke-WebRequest 'https://maven.minecraftforge.net/net/minecraftforge/forge/maven-metadata.xml').Content).metadata.versioning.versions.version -match "^$GameVersion-"
 }
 
 function GetForgeDownloadLink {
     param (
-        [string]$Version,
-        [string]$Type = 'installer'
+        [string]$Version
     )
-    return "https://maven.minecraftforge.net/net/minecraftforge/forge/$ForgeVersion/forge-$ForgeVersion-$Type.jar"
+    return GetMavenInstallDownloadLink "https://maven.minecraftforge.net" "net/minecraftforge/forge" $Version "forge"
+}
+
+function GetLegacyJavaFixerDownloadLink {
+    return 'https://maven.minecraftforge.net/net/minecraftforge/lex/legacyjavafixer/1.0/legacyjavafixer-1.0.jar'
 }
 
 function GetFabricVersionList {
@@ -35,11 +39,33 @@ function GetNeoForgeVersionLatest {
     return Invoke-WebRequest 'https://maven.neoforged.net/api/maven/latest/version/releases/net%2Fneoforged%2Fneoforge' | ConvertFrom-Json
 }
 
+function GetNeoForgeLegacyVersionList {
+    return Invoke-WebRequest 'https://maven.neoforged.net/api/maven/versions/releases/net/neoforged/forge' | ConvertFrom-Json
+}
+
 function GetNeoForgeDownloadLink {
     param (
         [string]$Version
     )
-    return "https://maven.neoforged.net/releases/net/neoforged/neoforge/$Version/neoforge-$Version-installer.jar"
+    return GetMavenInstallDownloadLink "https://maven.neoforged.net" "releases/net/neoforged/neoforge" $Version "neoforge"
+}
+
+function GetNeoForgeLegacyDownloadLink {
+    param (
+        [string]$Version
+    )
+    return GetMavenInstallDownloadLink "https://maven.neoforged.net" "releases/net/neoforged/forge" $Version "forge"
+}
+
+function GetMavenInstallDownloadLink {
+    param (
+        [string]$Maven,
+        [string]$MavenPath,
+        [string]$Version,
+        [string]$ArtifactName,
+        [string]$Type = 'installer'
+    )
+    return "$Maven/$MavenPath/$Version/$ArtifactName-$Version-$Type.jar"
 }
 
 function ModrinthCreateFacets {
