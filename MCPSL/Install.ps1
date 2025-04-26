@@ -44,12 +44,13 @@ function GetJavaManifest {
     return Invoke-WebRequest 'https://launchermeta.mojang.com/v1/products/java-runtime/2ec0cc96c44e5a76b9c8b7c39df7210883d12871/all.json' | ConvertFrom-Json
 }
 
-function InstallJava {
+function Install-MCJava {
     param (
         [string]$OS,
         [string]$Component,
         [string]$Path = "$env:LOCALAPPDATA/Packages/Microsoft.4297127D64EC6_8wekyb3d8bbwe/LocalCache/Local/runtime"
     )
+    New-Item "$Path/$Component/$OS/$Component" -Type 'Directory' -Force | Out-Null
     $ManifestDownload = (GetJavaManifest).$OS.$Component.manifest
     $Manifest = (Invoke-WebRequest $ManifestDownload.url).Content
     if ((Get-StringHash $Manifest) -eq $ManifestDownload.sha1 -and $Manifest.Length -eq $ManifestDownload.size) {
