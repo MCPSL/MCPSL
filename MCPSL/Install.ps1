@@ -40,6 +40,29 @@ function Install {
     Invoke-WebRequest $VersionJson.downloads.client -OutFile "$Path/versions/$Id/$Id.jar"
 }
 
+function Restore {
+    param (
+        [string]$VersionJson,
+        [string]$Path = "$env:APPDATA/.minecraft"
+    )
+    $Version = $VersionJson | ConvertFrom-Json
+    Invoke-WebRequest $Version.assetIndex.url -OutFile "$Path/assets/indexes/$($Version.assetIndex.id).json"
+    if ((Get-FileHash -Algorithm 'SHA1' -Path "$Path/assets/indexes/$($Version.assetIndex.id).json").Hash -eq $Version.assetIndex.sha1) {
+        $AssetIndex = Get-Content "$Path/assets/indexes/$($Version.assetIndex.id).json" | ConvertFrom-Json
+        $Jobs = @()
+        foreach ($Directory in ($AssetIndex | Get-Member -MemberType 'NoteProperty').Name) {
+            $Directory
+            foreach ($Name in ($AssetIndex.$Directory | Get-Member -MemberType 'NoteProperty').Name) {
+                $Hash = ($AssetIndex).$Directory.$Name.hash
+                $Jobs += Start-ThreadJob -Name $Name -ScriptBlock {
+                    Invoke-WebRequest "https://resources.download.minecraft.net/$(($Using:Hash).Substring(0, 2))/$Using:Hash" -OutFile "$Using:Path/assets/objects/$(($Using:Hash).Substring(0, 2))/$Using:Hash"
+                }
+            }
+        }
+        Wait-Job $Jobs
+    }
+}
+
 function GetJavaManifest {
     return Invoke-WebRequest 'https://launchermeta.mojang.com/v1/products/java-runtime/2ec0cc96c44e5a76b9c8b7c39df7210883d12871/all.json' | ConvertFrom-Json
 }
