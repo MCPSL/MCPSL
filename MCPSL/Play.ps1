@@ -40,7 +40,7 @@ function Install {
     Invoke-WebRequest $VersionJson.downloads.client -OutFile "$Path/versions/$Id/$Id.jar"
 }
 
-function Restore {
+function Prepare {
     param (
         [string]$VersionJson,
         [string]$Path = "$env:APPDATA/.minecraft"
@@ -61,6 +61,117 @@ function Restore {
         }
         Wait-Job $Jobs
     }
+}
+
+function Launch {
+    param (
+        [string]$VersionJsonPath,
+        [string]$VersionJarPath,
+        [string]$LibrariesPath,
+        [string]$OsName,
+        [string]$OsArch,
+        [string]$JavaPath,
+        [string]$NativesDirectory,
+        [string]$LauncherName,
+        [string]$LauncherVersion,
+        [string]$Classpath,
+        [string]$JVMArguments = '-Xmx2G -XX:+UnlockExperimentalVMOptions -XX:+UseG1GC -XX:G1NewSizePercent=20 -XX:G1ReservePercent=20 -XX:MaxGCPauseMillis=50 -XX:G1HeapRegionSize=32M',
+        [string]$AuthPlayerName,
+        [string]$VersionName,
+        [string]$GameDirectory,
+        [string]$AssetsRoot,
+        [string]$AssetsIndexName,
+        [string]$AuthUuid,
+        [string]$AuthAccessToken,
+        [string]$ClientId,
+        [string]$AuthXuid,
+        [string]$UserType,
+        [string]$VersionType,
+        [string]$ResolutionWidth,
+        [string]$ResolutionHeight,
+        [string]$QuickPlayPath,
+        [string]$QuickPlaySingleplayer,
+        [string]$QuickPlayMultiplayer,
+        [string]$QuickPlayRealms
+    )
+    $VersionJson = Get-Content $VersionJsonPath | ConvertFrom-Json
+    [string]$Arguments = $null
+    foreach ($Argument in $VersionJson.arguments.jvm) {
+        if ($Argument.rules) {
+            $Join = $true
+            foreach ($Rule in $Argument.rules) {
+                if ($Rule.action -eq 'allow') {
+                    if ($Rule.os.name -ne $OsName -or $Rule.os.arch -ne $OsArch) {
+                        $Join = $false
+                    }
+                }
+            }
+            if ($Join) {
+                $Arguments += "$($Argument.value) "
+            }
+        } else {
+            $Arguments += "$Argument "
+        }
+    }
+    $Arguments += "$JVMArguments "
+    $Arguments += "$($VersionJson.logging.client.argument) "
+    $Arguments += "$($VersionJson.mainClass)"
+    foreach ($Argument in $VersionJson.arguments.game) {
+        if ($Argument.rules) {
+            $Join = $true
+            foreach ($Rule in $Argument.rules) {
+                if ($Rule.action -eq 'allow') {
+                    if ($Rule.features.has_custom_resolution -and $ResolutionWidth -and $ResolutionHeight) {
+                        $Join = $true
+                    } else {
+                        $Join = $false
+                    }
+                }
+            }
+            if ($Join) {
+                $Arguments += "$($Argument.value) "
+            }
+        } else {
+            $Arguments += "$Argument "
+        }
+    }
+    if (-not $Classpath) {
+        foreach ($Library in $VersionJson.libraries) {
+            $Classpath += "$LibrariesPath/$($Library.downloads.artifact.path);"
+        }
+        $Classpath += "$VersionJarPath "
+    }
+    $Arguments = $Arguments.TrimEnd(" ")
+    $Arguments = $Arguments.Replace('${natives_directory}',$NativesDirectory)
+    $Arguments = $Arguments.Replace('${launcher_name}',$LauncherName)
+    $Arguments = $Arguments.Replace('${launcher_version}',$LauncherVersion)
+    $Arguments = $Arguments.Replace('${classpath}',$Classpath)
+    $Arguments = $Arguments.Replace('${game_directory}',$GameDirectory)
+    $Arguments = $Arguments.Replace('${assets_root}',$AssetsRoot)
+    $Arguments = $Arguments.Replace('${assets_index_name}',$AssetsIndexName)
+    $Arguments = $Arguments.Replace('${auth_player_name}',$AuthPlayerName)
+    $Arguments = $Arguments.Replace('${auth_uuid}',$AuthUuid)
+    $Arguments = $Arguments.Replace('${auth_access_token}',$AuthAccessToken)
+    $Arguments = $Arguments.Replace('${clientid}',$ClientId)
+    $Arguments = $Arguments.Replace('${auth_xuid}',$AuthXuid)
+    $Arguments = $Arguments.Replace('${user_type}',$UserType)
+    $Arguments = $Arguments.Replace('${version_name}',$VersionName)
+    $Arguments = $Arguments.Replace('${version_type}',$VersionType)
+    $Arguments = $Arguments.Replace('${resolution_width}',$ResolutionWidth)
+    $Arguments = $Arguments.Replace('${resolution_height}',$ResolutionHeight)
+    $Arguments = $Arguments.Replace('${quick_play_path}',$QuickPlayPath)
+    $Arguments = $Arguments.Replace('${quick_play_singleplayer}',$QuickPlaySingleplayer)
+    $Arguments = $Arguments.Replace('${quick_play_multiplayer}',$QuickPlayMultiplayer)
+    $Arguments = $Arguments.Replace('${quick_play_realms}',$QuickPlayRealms)
+    $Arguments
+    'stop'
+}
+
+function Play {
+    param (
+        $test
+    )
+    
 }
 
 function GetJavaManifest {
