@@ -1,17 +1,20 @@
 function Auth {
     param (
-        [string]$ClientID
+        [string]$ClientID = '96008c85-c6f0-4cb5-a2dc-fe31d94e1177'
     )
     $OAuth = AuthCodeFlow -ClientID $ClientID
     $XboxLive = XboxLiveAuth -AccessToken $OAuth.access_token
     $XSTSAuth = MCXSTSAuth -XboxLiveToken $XboxLive.Token
     $LoginWithXbox = MCLoginWithXbox -UHs $XboxLive.DisplayClaims.xui[0].uhs -XSTSToken $XSTSAuth.Token
-    $LoginWithXbox.access_token = ConvertTo-SecureString $LoginWithXbox.access_token -AsPlainText
-    If ((MCStore -AccessToken $LoginWithXbox.access_token).items.game_minecraft) {
-        return $LoginWithXbox.access_token
+    $Return = @{}
+    $Return.AccessToken = ConvertTo-SecureString $LoginWithXbox.access_token -AsPlainText
+    $Return.RefreshToken = $OAuth.refresh_token
+    $Return.ExpiresIn = $LoginWithXbox.expires_in
+    $Return.Timestamp = Get-Date -Format 'yyyy-MM-ddTHH:mm:ss:fffZ' -AsUTC
+    If ((MCStore -AccessToken $Return.AccessToken).items.product_minecraft) {
+        return $Return
     } else {
         throw "This account doesn't own Minecraft Java Edition."
-        exit
     }
 }
 
@@ -92,4 +95,19 @@ function MCStore {
         [securestring]$AccessToken
     )
     return Invoke-WebRequest 'https://api.minecraftservices.com/entitlements/mcstore' -Authentication 'Bearer' -Token $AccessToken | ConvertFrom-Json
+}
+
+function Write-Auth {
+    $Auth = Auth
+    $Auth.AccessToken = ConvertFrom-SecureString $Auth.AccessToken
+    Set-Content -Path "auth.json" -Value ($Auth | ConvertTo-Json)
+}
+
+function Read-Auth {
+    param (
+        [string]$Path = "auth.json"
+    )
+    $Auth = Get-Content -Path $Path | ConvertFrom-Json
+    $Auth.AccessToken = ConvertTo-SecureString $Auth.AccessToken
+    return $Auth
 }
