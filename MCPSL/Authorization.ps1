@@ -33,19 +33,19 @@ function AuthCodeFlow {
     If ($Code -and $Context.Request.QueryString['state'] -eq $State) {
         $Context.Response.StatusCode = 200
         $ResponseString = "<HTML><BODY><h1>Success.</h1><h2>You can close this page now.</h2></BODY></HTML>"
-        $Buffer = [System.Text.Encoding]::UTF8.GetBytes($ResponseString)
-        $Context.Response.ContentLength64 = $Buffer.Length
-        $Context.Response.OutputStream.Write($Buffer,0,$Buffer.Length)
-        $HttpListener.Stop()
-        return Invoke-WebRequest 'https://login.microsoftonline.com/consumers/oauth2/v2.0/token' -Method 'POST' -Body "client_id=$ClientID&scope=$Scope&code=$Code&redirect_uri=$EncodedRedirectURI&grant_type=authorization_code" | ConvertFrom-Json
+        $Return = Invoke-WebRequest 'https://login.microsoftonline.com/consumers/oauth2/v2.0/token' -Method 'POST' -Body "client_id=$ClientID&scope=$Scope&code=$Code&redirect_uri=$EncodedRedirectURI&grant_type=authorization_code" | ConvertFrom-Json
     } else {
         $Context.Response.StatusCode = 400
-        $ErrorDescription = $Context.Request.QueryString['error_description']
         $ResponseString = "<HTML><BODY><h1>$($Context.Request.QueryString['error_description'])</h1><h2>$ErrorDescription</h2></BODY></HTML>"
-        $Buffer = [System.Text.Encoding]::UTF8.GetBytes($ResponseString)
-        $Context.Response.ContentLength64 = $Buffer.Length
-        $Context.Response.OutputStream.Write($Buffer,0,$Buffer.Length)
-        $HttpListener.Stop()
+        $ErrorDescription = $Context.Request.QueryString['error_description']
+    }
+    $Buffer = [System.Text.Encoding]::UTF8.GetBytes($ResponseString)
+    $Context.Response.ContentLength64 = $Buffer.Length
+    $Context.Response.OutputStream.Write($Buffer,0,$Buffer.Length)
+    $HttpListener.Stop()
+    if ($Return) {
+        return $Return
+    } else {
         throw $ErrorDescription
     }
 }
