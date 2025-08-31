@@ -37,7 +37,7 @@ function Install {
     $Version = (GetMCVersionManifest).versions.Where{ $_.id -eq $Id }
     Invoke-WebRequest $Version.url -OutFile "$Path/versions/$Id/$Id.json"
     $VersionJson = Get-Content "$Path/versions/$Id/$Id.json" | ConvertFrom-Json
-    Invoke-WebRequest $VersionJson.downloads.client -OutFile "$Path/versions/$Id/$Id.jar"
+    Invoke-WebRequest $VersionJson.downloads.client.url -OutFile "$Path/versions/$Id/$Id.jar"
 }
 
 function Prepare {
